@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wallapop - Custom Ratings</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 p-6">
+  <div class="max-w-3xl mx-auto">
+    <h1 class="text-2xl font-bold mb-4">Wallapop — Manual Ratings</h1>
+
+    <form id="reviewForm" class="bg-white p-4 rounded shadow space-y-3">
+      <div>
+        <label class="block text-sm font-medium">Username (required)</label>
+        <input id="username" type="text" required class="mt-1 block w-full border p-2 rounded" placeholder="Wallapop display name">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium">Profile URL (optional)</label>
+        <input id="profile_url" type="url" class="mt-1 block w-full border p-2 rounded" placeholder="https://es.wallapop.com/...">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium">Rating</label>
+        <select id="stars" required class="mt-1 block w-full border p-2 rounded">
+          <option value="">Select rating</option>
+          <option value="5">5 — Positive</option>
+          <option value="1">1 — Negative</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium">Comment</label>
+        <textarea id="comment" rows="3" class="mt-1 block w-full border p-2 rounded" placeholder="Optional opinion about the conversation"></textarea>
+      </div>
+
+      <div class="flex gap-2">
+        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Submit</button>
+        <button id="clear" type="button" class="px-4 py-2 border rounded">Clear</button>
+      </div>
+    </form>
+
+    <section class="mt-6">
+      <h2 class="text-xl font-semibold mb-3">All reviews</h2>
+      <div id="reviews" class="space-y-3"></div>
+    </section>
+  </div>
+
+  <script>
+    const API = "/api/reviews";
+
+    async function loadReviews() {
+      const res = await fetch(API);
+      const data = await res.json();
+      const container = document.getElementById("reviews");
+      container.innerHTML = "";
+      if (!data || data.length === 0) {
+        container.innerHTML = '<div class="text-gray-600">No reviews yet.</div>';
+        return;
+      }
+      data.forEach(r => {
+        const stars = "★".repeat(r.stars) + "☆".repeat(5 - r.stars);
+        const link = r.profile_url
+          ? `<a href="${r.profile_url}" target="_blank" class="text-blue-600 hover:underline">${r.username}</a>`
+          : `<a href="https://es.wallapop.com/app/search?keywords=${encodeURIComponent(r.username)}" target="_blank" class="text-blue-600 hover:underline">${r.username}</a>`;
+        const el = document.createElement("div");
+        el.className = "bg-white p-3 rounded shadow";
+        el.innerHTML = `
+          <div class="flex justify-between items-start">
+            <div>
+              <div class="font-semibold">${link}</div>
+              <div class="text-sm text-gray-600">${new Date(r.date_added).toLocaleString()}</div>
+            </div>
+            <div class="text-lg">${stars}</div>
+          </div>
+          <div class="mt-2 text-gray-800">${r.comment || ""}</div>
+        `;
+        container.appendChild(el);
+      });
+    }
+
+    document.getElementById("reviewForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const username = document.getElementById("username").value.trim();
+      const profile_url = document.getElementById("profile_url").value.trim() || null;
+      const stars = parseInt(document.getElementById("stars").value, 10);
+      const comment = document.getElementById("comment").value.trim();
+      if (!username || !stars) return alert("Username and rating are required.");
+      await fetch(API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, profile_url, stars, comment })
+      });
+      e.target.reset();
+      loadReviews();
+    });
+
+    document.getElementById("clear").addEventListener("click", () => {
+      document.getElementById("reviewForm").reset();
+    });
+
+    loadReviews();
+  </script>
+</body>
+</html>

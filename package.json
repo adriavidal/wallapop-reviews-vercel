@@ -1,0 +1,11 @@
+{
+  "name": "wallapop-reviews-vercel",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "dependencies": {
+    "pg": "^8.11.5"
+  }
+}
